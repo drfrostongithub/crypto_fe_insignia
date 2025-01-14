@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import PropTypes from "prop-types";
 import { API_BASE_URL } from "../api";
@@ -16,29 +16,34 @@ const Transactions = ({ access_token }) => {
     amount: "",
   });
   const [userInfo, setUserInfo] = useState({});
+  const [depositAmount, setDepositAmount] = useState(""); // State for deposit amount
+  const [showDepositModal, setShowDepositModal] = useState(false); // Modal visibility
+  const [page, setPage] = useState(1); // Current page number
+  const [totalPages, setTotalPages] = useState(1); // Total pages available
 
-  const fetchTransactions = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/wallets/transactions/users/top`,
-        {
-          headers: { access_token: `${access_token}` },
-        }
-      );
-      setTransactions(
-        Array.isArray(response.data.transactions)
-          ? response.data.transactions
-          : []
-      );
-    } catch (err) {
-      console.error("Error fetching transactions", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchTransactions = useCallback(
+    async (page = 1) => {
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/wallets/transactions/user/top`,
+          {
+            headers: { access_token: `${access_token}` },
+            params: { page, limit: 10 }, // Send page and limit as query parameters
+          }
+        );
+        setTransactions(response.data.transactions);
+        setTotalPages(response.data.totalPages); // Update total pages for pagination
+      } catch (err) {
+        console.error("Error fetching transactions", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [access_token]
+  );
 
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/wallets/balance`, {
         headers: { access_token: `${access_token}` },
@@ -47,14 +52,24 @@ const Transactions = ({ access_token }) => {
     } catch (err) {
       console.error("Error fetching balance", err);
     }
+  }, [access_token]);
+
+  const decodeToken = (access_token) => {
+    try {
+      const decoded = jwtDecode(access_token);
+      return decoded;
+    } catch (err) {
+      console.error("Error decoding token", err);
+      return null;
+    }
   };
 
   const handleTransfer = async () => {
     try {
-      const { recipientId, amount } = transferDetails;
+      const { to_username, amount } = transferDetails;
       const response = await axios.post(
         `${API_BASE_URL}/wallets/transfer`,
-        { recipientId, amount },
+        { to_username, amount },
         { headers: { access_token } }
       );
       alert(response.data.message);
@@ -67,14 +82,25 @@ const Transactions = ({ access_token }) => {
     }
   };
 
-  const decodeToken = (access_token) => {
+  const handleDeposit = async () => {
     try {
-      const decoded = jwtDecode(access_token);
-      return decoded;
+      const response = await axios.post(
+        `${API_BASE_URL}/wallets/deposit`, // Endpoint to handle deposit
+        { amount: depositAmount },
+        { headers: { access_token } }
+      );
+      alert(response.data.message); // Show success message
+      fetchBalance(); // Refresh the balance
+      setShowDepositModal(false); // Close the modal
     } catch (err) {
-      console.error("Error decoding token", err);
-      return null;
+      console.error("Error making deposit", err);
+      alert(err.response?.data?.message || "Deposit failed");
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    fetchTransactions(newPage); // Fetch transactions for the new page
   };
 
   useEffect(() => {
@@ -87,7 +113,7 @@ const Transactions = ({ access_token }) => {
     }
     fetchTransactions();
     fetchBalance();
-  }, [access_token]);
+  }, [fetchBalance, fetchTransactions, access_token]);
 
   const filteredTransactions = Array.isArray(transactions)
     ? transactions.filter((transaction) => {
@@ -116,6 +142,12 @@ const Transactions = ({ access_token }) => {
           <p className="text-sm text-gray-600">User ID: {userInfo.id}</p>
         </div>
         <div className="flex space-x-4">
+          <button
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            onClick={() => setShowDepositModal(true)} // Open Deposit Modal
+          >
+            Deposit
+          </button>
           <button
             className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
             onClick={() => setShowTransferModal(true)}
@@ -182,6 +214,25 @@ const Transactions = ({ access_token }) => {
                   ))}
                 </tbody>
               </table>
+              <div className="flex justify-between items-center mt-4">
+                <button
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                >
+                  Previous
+                </button>
+                <span>
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= totalPages}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -192,12 +243,12 @@ const Transactions = ({ access_token }) => {
             <h3 className="text-lg font-semibold">Transfer Funds</h3>
             <input
               type="text"
-              placeholder="Recipient ID"
-              value={transferDetails.recipientId}
+              placeholder="Recipient Username"
+              value={transferDetails.to_username}
               onChange={(e) =>
                 setTransferDetails((prev) => ({
                   ...prev,
-                  recipientId: e.target.value,
+                  to_username: e.target.value,
                 }))
               }
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -223,6 +274,36 @@ const Transactions = ({ access_token }) => {
               </button>
               <button
                 onClick={() => setShowTransferModal(false)}
+                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* // Modal for Deposit */}
+      {showDepositModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded shadow p-6 w-96 space-y-4">
+            <h3 className="text-lg font-semibold">Deposit Funds</h3>
+            <input
+              type="number"
+              placeholder="Amount"
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(e.target.value)}
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex space-x-4">
+              <button
+                onClick={handleDeposit} // Handle deposit
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Submit
+              </button>
+              <button
+                onClick={() => setShowDepositModal(false)}
                 className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded"
               >
                 Cancel
