@@ -10,9 +10,7 @@ const AuthBox = ({ onLogin }) => {
   const [error, setError] = useState("");
 
   const handleAuth = async () => {
-    const url = isLogin
-      ? `${API_BASE_URL}/users/login`
-      : `${API_BASE_URL}/users/register`;
+    const url = isLogin ? `${API_BASE_URL}/login` : `${API_BASE_URL}/register`;
     try {
       const response = await axios.post(url, { username, password });
       if (isLogin) {
