@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import AuthBox from "./pages/Authbox";
 import Transactions from "./pages/Transactions";
+import TopSpenders from "./pages/TopSpenders";
 
 const App = () => {
   const [access_token, setAccessToken] = useState(null);
@@ -35,6 +36,10 @@ const App = () => {
             <Route
               path="*"
               element={<Transactions access_token={access_token} />}
+            />
+            <Route
+              path="/top-spenders"
+              element={<TopSpenders access_token={access_token} />}
             />
           </>
         )}

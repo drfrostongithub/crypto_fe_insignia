@@ -32,6 +32,7 @@ const TransactionChart = ({ transactions }) => {
         label: "Transaction Value",
         data: transactions.map((transaction) => transaction.amount),
         borderColor: "rgb(75, 192, 192)",
+        pointStyle: "circle",
         backgroundColor: "rgba(75, 192, 192, 0.2)",
       },
     ],

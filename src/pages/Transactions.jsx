@@ -143,6 +143,12 @@ const Transactions = ({ access_token }) => {
         </div>
         <div className="flex space-x-4">
           <button
+            className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded"
+            onClick={() => (window.location.href = "/top-spenders")}
+          >
+            Top 10 Spenders
+          </button>
+          <button
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
             onClick={() => setShowDepositModal(true)} // Open Deposit Modal
           >
