@@ -29,6 +29,12 @@ const TopSpenders = ({ access_token }) => {
 
   return (
     <div className="p-6">
+      <button
+        className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded"
+        onClick={() => (window.location.href = "/")}
+      >
+        Back
+      </button>
       <h1 className="text-2xl font-semibold mb-4">Top 10 Spenders</h1>
       {loading ? (
         <p className="text-gray-500">Loading...</p>
