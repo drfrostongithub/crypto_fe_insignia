@@ -1,8 +1,25 @@
-# React + Vite
+# Crypto Insignia Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend for the Crypto Insignia application, built with React and Vite. It includes features such as user authentication, transaction management, and visualization of top spenders.
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+
+```sh
+git clone https://github.com/yourusername/crypto-insignia-frontend.git
+cd crypto-insignia-frontend
+
+npm install
+# or
+yarn install
+
+Make sure the backend on port 3000 is ready
